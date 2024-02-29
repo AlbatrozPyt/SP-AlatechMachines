@@ -112,12 +112,11 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
 
         $payload = [
             'iss' => 'SP/AlatechMachines',
-            'aud' => 'SP/AlatechMachines',
-            'exp' => time(),
+            'exp' => time() + 3600*24*30,
             'id' => 'unique-id',
         ];
         $payload = json_encode($payload);
-        $payload = base64_encode($payload);
+        $payload = (base64_encode($payload));
 
         $key = 'secret_key';
 

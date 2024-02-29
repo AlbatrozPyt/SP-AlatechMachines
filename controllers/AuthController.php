@@ -11,6 +11,8 @@ use yii\filters\AccessControl;
 use yii\filters\auth\HttpBearerAuth;
 use yii\rest\Controller;
 use sizeg\jwt\Jwt;
+use yii\web\Session;
+use function PHPUnit\Framework\isNull;
 
 class AuthController extends Controller
 {
@@ -18,17 +20,40 @@ class AuthController extends Controller
 
     public function actionLogin()
     {
-        $login = new LoginForm();
 
-        if ($login->load(\Yii::$app->request->getBodyParams(), '') && $login->login())
+        if ($_SESSION['user'] === null)
         {
-            $user = \Yii::$app->user->identity;
-            $token = $user->generateToken();
+            $user = new User();
 
-
-            return ['token' => $token, 'user' => $user];
+            if ($user->load(\Yii::$app->request->post(), ''))
+            {
+                if ($user = User::findOne(['username' => $user->username, 'password' => $user->password])) {
+                    $user->accessToken = $user->generateToken();
+                    $user->save();
+                    \Yii::$app->session->set('user', $user);
+                    return ['token' => $user->accessToken];
+                } else {
+                    \Yii::$app->response->statusCode = 422;
+                    return ['message' => 'Credenciais inválidas'];
+                }
+            }
         }
 
-        return  $login;
+        return ['message' => 'Usuário já autenticado'];
+    }
+
+    public function actionLogout()
+    {
+
+        $tokenAuth = \Yii::$app->request->headers->set('Authorization', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJTUFwvQWxhdGVjaE1hY2hpbmVzIiwiZXhwIjoxNzExODEzOTk1LCJpZCI6InVuaXF1ZS1pZCJ9.AWu+x5UIg94lWZyPeyzxoo/tg8HWPUob0hbJQiQqUPw=');
+
+        if (User::findIdentityByAccessToken($tokenAuth) != null)
+        {
+            $_SESSION['user'] = null;
+            return ['message' => 'Logout com sucesso'];
+        }
+        \Yii::$app->response->statusCode = 403;
+        $_SESSION['user'] = null;
+       return ['message' => 'Token inválido', 'token' => $tokenAuth];
     }
 }

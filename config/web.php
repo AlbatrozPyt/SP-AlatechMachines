@@ -18,11 +18,8 @@ $config = [
             'enableCsrfValidation' => false,
             'parsers' => [
                 'application/json' => \yii\web\JsonParser::class
-            ]
+            ],
         ],
-//        'response' => [
-//            'format' => \yii\web\Response::FORMAT_JSON
-//        ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
